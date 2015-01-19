@@ -1,0 +1,23 @@
+{
+  "name": "usco-desktop",
+  "main": "app://usco-desktop/index.html",
+  "description": "usco-desktop",
+  "author": "Mark kaosat-dev Moissette",
+  "license": "AGPLV3",
+  "version": "0.0.1",
+  "node-remote": "localhost",
+  "window": {
+    "title": "usco-desktop",
+    "frame": true,
+    "toolbar": false,
+    "width": 1200,
+    "height": 600
+  },
+  "webkit": {
+    "plugin": "true"
+  },
+  "dependencies": {
+    "gulp": "^3.8.10",
+    "gulp-util": "^3.0.2"
+  }
+}
