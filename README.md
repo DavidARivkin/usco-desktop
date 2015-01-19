@@ -3,6 +3,14 @@ usco-desktop
 
 
 
+Feature ideas
+-------------
+
+- browse local 3d designs/ files
+- share a design seamlessly via youmagine (plugable connector, multiple backends)
+- search localy and remotely
+- avoid excessive complexity
+- cross platform tech (browser, desktop, smartphone, cli,  etc)
 
 
 Linux issues, and how to solve them :
