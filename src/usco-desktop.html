@@ -3,10 +3,12 @@
 <link rel="import" href="../components/core-toolbar/core-toolbar.html">
 <link rel="import" href="../components/core-media-query/core-media-query.html">
 <link rel="import" href="../components/paper-icon-button/paper-icon-button.html">
-
 <link rel="import" href="../components/paper-input/paper-input-decorator.html">
 
 <link href='http://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
+
+<link rel="import" href="adress-bar.html">
+
 
 <polymer-element name="usco-desktop">
   <template>
@@ -32,6 +34,13 @@
       /*height:46px;*/
     }
     
+    core-toolbar /deep/ #bottomBar{
+      /*
+      -webkit-user-select: none;
+      -webkit-app-region: drag;*/
+    }
+    
+    /*search related styling*/
     .searchField{
       opacity: 0;
       
@@ -64,6 +73,15 @@
       background-color: white;
     }
     
+    /* only used for node webkit, frameless version:
+    set this style to define the draggable item, see here
+    for more info: https://github.com/nwjs/nw.js/wiki/Frameless-window
+    */
+    .windowDragger{
+      -webkit-user-select: none;
+      -webkit-app-region: drag;
+    }
+    
     </style>
    
     <core-toolbar class="core-narrow">
@@ -71,30 +89,35 @@
       <span flex>USCO-DESKTOP</span>
       
       <span>
+        <adress-bar uri="{{currentPath}}"> </adress-bar>
+      </span>
+      <span>
         <paper-input-decorator label="search..." class="searchField" id="srchField"> 
           <input id="searchField" type="text" on-keyup="{{search}}" /> 
         </paper-input-decorator>
       </span>
       <paper-icon-button icon="search" on-click="{{ toggleSearch }}"> </paper-icon-button>
       <span id="results" style="position:absolute;top:40px;left:50%;z-index: 9999999;color:black;background:white">
-      <template repeat="{{result in searchResults}}">
-        <div style="cursor:pointer" on-tap="{{blah}}">{{result}}</div>
-      </template>
+        <template repeat="{{result in searchResults}}">
+          <div style="cursor:pointer" on-tap="{{blah}}">{{result}}</div>
+        </template>
       </span>
-      
-      
       <paper-icon-button icon="more-vert"></paper-icon-button>
     </core-toolbar>
+    
+    <div>
+      Files and folders
+    </div>
   </template>
   <script>
   Polymer("usco-desktop",{
     _searchActive : false,
-    created:function(){
-      console.log("hi , I got created");
-    },
+    currentPath:"/foo/bar/baz",
+    //internal api
     toggleSearch:function(){
       this._searchActive = !this._searchActive;
     },
+    //attribute change handlers
     _searchActiveChanged:function(){
       if( this._searchActive ){
         this.$.srchField.style.opacity = 1;

@@ -1,0 +1,32 @@
+<link rel="import" href="../components/polymer/polymer.html">
+
+<polymer-element name="adress-bar" attributes="uri">
+  <template>
+    <style>
+    :host{
+      font-size:0.8em;
+    }
+    .uriElem{
+      cursor:pointer;
+      color:#18294D;
+    }
+    </style>
+    <span>
+      <template repeat="{{uriElem in uriComponents}}">
+        <span class="uriElem">{{uriElem}}</span> / 
+      </template>
+    </span>
+  </template>
+  <script>
+    Polymer("adress-bar",{
+      uri:"",
+      uriComponents:[],
+      //attribute change handlers
+      uriChanged:function(){
+        //TODO: reuse our exisitng code , or generic node.js path etc 
+        this.uriComponents = this.uri.split("/");
+      
+      }
+    });
+  </script>
+</polymer-element>
