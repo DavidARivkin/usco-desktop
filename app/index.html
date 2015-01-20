@@ -2,21 +2,14 @@
   <head>
     <title>Usco desktop</title>
      <script src="webcomponents.min.js"></script>
-     <link rel="import" href="ulti-viewer-embed.html">
-
-      <!--for testing only-->
-      <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-
-
-      <!-- styling example, as it would appear in a website-->
-      <link rel="stylesheet" type="text/css" href="embed.css" shim-shadowdom>
-
+     <link rel="import" href="usco-desktop.html">
+      <!--<link rel="stylesheet" type="text/css" href="embed.css" shim-shadowdom>-->
       <style>
-         html, body, ulti-viewer{
-      margin: 0;
-      position: absolute;
-      height: 100%;
-      width:100%;
+         html, body, usco-desktop{
+          margin: 0;
+          position: absolute;
+          height: 100%;
+          width:100%;
         
        -webkit-touch-callout: none;
 		  -webkit-user-select: none;
@@ -28,18 +21,13 @@
       </style>
   </head>
 <body>
-  <ulti-viewer></ulti-viewer>
+  <usco-desktop></usco-desktop>
 
   <script>
       window.addEventListener('polymer-ready', function() {
-        var uscoDesktop = document.querySelector('ulti-viewer');
+        var uscoDesktop = document.querySelector('usco-desktop');
         console.log("uscoDesktop",uscoDesktop);
-        
         var currentUrl = window.location.origin;
-        var modelUrl = "https://s3-eu-west-1.amazonaws.com/files.youmagine.com/uploads/document/file/1078/Extruder_Big_Gear_V1.stl";
-        modelUrl = currentUrl+"/demo-data/UM2CableChain_BedEnd.STL";
-        
-        setTimeout(function(){uscoDesktop.loadMesh(modelUrl,{display:true});},1000 )
     });
   </script>  
 </body>
