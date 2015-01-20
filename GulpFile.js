@@ -62,16 +62,15 @@ gulp.task('build:nw',  function(callback){
 /* do not regenerate a final node webkit app, just launch it 
 (for dev purposes) */
 gulp.task('testrun:nw',  function(callback){
-  var nwPath = "./cache/"+nwVersion+"/"+nwPlatform+"/nw "+DEST_DIR+"/index.html"
+  var nwPath = "./cache/"+nwVersion+"/"+nwPlatform+"/nw "+DEST_DIR+"/"
   gutil.log('nw exec path', nwPath);
-  //var cmd = 
-  /*var cmd = shell( nwPath );
-  cmd.on('error', function (msg) {
-        gutil.log('nw error', msg);
-  });*/
   return gulp.src('').pipe(
     shell( [nwPath] ) );
-  //return shell.task( [nwPath] );//cmd();
+});
+
+gulp.task('testrun2:nw',  function(callback){
+  runSequence(["copy","vulcanize"], 'testrun:nw',
+              callback);
 });
 
 gulp.task('default', ['vulcanize', 'copy', 'nw']);

@@ -1,5 +1,7 @@
 <link rel="import" href="../components/polymer/polymer.html">
 
+<link rel="import" href="../components/core-selector/core-selector.html">
+
 <polymer-element name="adress-bar" attributes="uri">
   <template>
     <style>
@@ -10,23 +12,43 @@
       cursor:pointer;
       color:#18294D;
     }
+    .uriElems{
+      width:300px;
+    }
     </style>
     <span>
-      <template repeat="{{uriElem in uriComponents}}">
-        <span class="uriElem">{{uriElem}}</span> / 
-      </template>
+        <template repeat="{{uriElem,index in uriComponents}}">
+          <span class="uriElem" value="{{index}}" on-tap="{{foo}}">{{uriElem}}</span> / 
+        </template>
+      
     </span>
   </template>
   <script>
     Polymer("adress-bar",{
       uri:"",
       uriComponents:[],
+      currentUriItem:null,
       //attribute change handlers
       uriChanged:function(){
         //TODO: reuse our exisitng code , or generic node.js path etc 
         this.uriComponents = this.uri.split("/");
-      
+      },
+      currentUriItemChanged:function(){
+        console.log("item", this.currentUriItem);
+      },
+      foo:function(event, target){
+        var index = event.target.getAttribute("value");
+        if( !index ) return;
+        index = parseInt( index );
+        //console.log("index", index, this.uriComponents[index], this.uriComponents.length);
+        console.log(this.uriComponents, index);
+        this.uriComponents.splice(index+1,this.uriComponents.length-1 -index);
+        var newUri = this.uriComponents.join("/");
+        console.log("newUri", newUri,this.uriComponents);
+        this.uri = newUri;
+        //console.log("event.target", event.target.getAttribute("value"));
       }
+     
     });
   </script>
 </polymer-element>

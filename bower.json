@@ -7,7 +7,9 @@
     "polymer": "Polymer/polymer#master",
     "core-toolbar": "Polymer/core-toolbar#~0.5.2",
     "paper-icon-button": "Polymer/paper-icon-button#~0.5.2",
-    "paper-input": "Polymer/paper-input#~0.5.2"
+    "paper-input": "Polymer/paper-input#~0.5.2",
+    "core-list": "Polymer/core-list#~0.5.2",
+    "core-selector": "Polymer/core-selector#~0.5.2"
   },
   "resolutions": {
     "webcomponentsjs": "~0.5.2",

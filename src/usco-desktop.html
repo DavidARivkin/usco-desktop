@@ -3,7 +3,9 @@
 <link rel="import" href="../components/core-toolbar/core-toolbar.html">
 <link rel="import" href="../components/core-media-query/core-media-query.html">
 <link rel="import" href="../components/paper-icon-button/paper-icon-button.html">
+
 <link rel="import" href="../components/paper-input/paper-input-decorator.html">
+<link rel="import" href="../components/core-list/core-list.html">
 
 <link href='http://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
 
@@ -20,6 +22,7 @@
       background:#f5f5f5;
       
       font-family: 'Montserrat';/*, sans-serif*/
+      overflow:hidden;
     }
     
     core-toolbar {
@@ -82,6 +85,26 @@
       -webkit-app-region: drag;
     }
     
+    .content{
+      height:80%;
+    }
+    
+    .filesAndFolders{
+      padding:10px;
+    }
+    .filesAndFoldersList{
+      overflow: auto;
+      height: 100%;
+      padding: 5px;
+    }
+    .fafFolder{
+      color:red;
+      cursor:pointer;
+    }
+     .fafFile{
+      color:blue;
+    }
+    
     </style>
    
     <core-toolbar class="core-narrow">
@@ -105,19 +128,89 @@
       <paper-icon-button icon="more-vert"></paper-icon-button>
     </core-toolbar>
     
-    <div>
+    <div class="content">
       Files and folders
+      <div class="filesAndFolders">
+      
+        <!--
+        <ul class="filesAndFoldersList">
+          <template repeat="{{item in _pathItems}}">
+            <li class="{{ {fafFolder: item.type == 'folder', fafFile: item.type == 'file'} | tokenList}}"
+            on-click="{{explore}}"
+            >
+              {{item.name}}  {{item.type}}
+            </li>
+          </template>
+        </ul>-->
+        <core-list data="{{_pathItems}}" selection="{{selectedPathItem}}" class="filesAndFoldersList">
+          <template>
+            <div class="{{ {fafFolder: model.type == 'folder', fafFile: model.type == 'file'} | tokenList}}">
+              {{model.name}}
+            </div>
+          </template>
+        </core-list>
+        
+        
+      </div>
     </div>
   </template>
   <script>
   Polymer("usco-desktop",{
     _searchActive : false,
-    currentPath:"/foo/bar/baz",
+    
+    currentPath:null,
+    _pathItems : [],
+    selectedPathItem: null,
+    
+    domReady:function(){
+      console.log("app ready"); 
+      this.currentPath = "/home/mmoissette/reprap"
+    },
     //internal api
     toggleSearch:function(){
       this._searchActive = !this._searchActive;
     },
+    selectedPathItemChanged:function(){
+    
+      console.log("selectedPathItem",this.selectedPathItem);
+      this.explore( this.selectedPathItem );
+    },
+    explore: function( pathItem ){
+      if(pathItem.type == "folder"){
+        this.currentPath += "/"+ pathItem.name;
+      }
+    },
+    fetchFiles:function( path ){
+      var fs = require("fs");
+      
+      var listing = fs.readdirSync( path );
+      var items = [];
+      for(var i=0;i<listing.length;i++){
+        //console.log(listing[i]);
+        var stats = fs.statSync( path + "/" + listing[i] );
+        //console.log(stats);
+        
+        var item = {name:listing[i]};
+        
+        if(stats.isFile() )
+        {
+          item.type = "file";
+        }
+        if(stats.isDirectory() )
+        {
+          item.type = "folder";
+        }
+        
+        items.push( item );
+      }
+      
+      this._pathItems = items;
+    },
     //attribute change handlers
+    currentPathChanged:function(){
+       if(!this.currentPath) return;
+       this.fetchFiles( this.currentPath ); 
+    },
     _searchActiveChanged:function(){
       if( this._searchActive ){
         this.$.srchField.style.opacity = 1;
