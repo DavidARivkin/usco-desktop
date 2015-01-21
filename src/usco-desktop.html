@@ -98,11 +98,11 @@
       padding: 5px;
     }
     .fafFolder{
-      color:red;
+      color:#ffd200;
       cursor:pointer;
     }
      .fafFile{
-      color:blue;
+      color:#18294D;
     }
     
     </style>
@@ -112,7 +112,7 @@
       <span flex>USCO-DESKTOP</span>
       
       <span>
-        <adress-bar uri="{{currentPath}}"> </adress-bar>
+        <adress-bar uri="{{path}}" activeUri="{{activePath}}"> </adress-bar>
       </span>
       <span>
         <paper-input-decorator label="search..." class="searchField" id="srchField"> 
@@ -131,7 +131,6 @@
     <div class="content">
       Files and folders
       <div class="filesAndFolders">
-      
         <!--
         <ul class="filesAndFoldersList">
           <template repeat="{{item in _pathItems}}">
@@ -149,8 +148,6 @@
             </div>
           </template>
         </core-list>
-        
-        
       </div>
     </div>
   </template>
@@ -158,26 +155,31 @@
   Polymer("usco-desktop",{
     _searchActive : false,
     
-    currentPath:null,
+    path:null,
+    activePath : null,
+    
     _pathItems : [],
     selectedPathItem: null,
     
     domReady:function(){
       console.log("app ready"); 
-      this.currentPath = "/home/mmoissette/reprap"
+      this.path = "/home/mmoissette/reprap/designs"
     },
     //internal api
     toggleSearch:function(){
       this._searchActive = !this._searchActive;
     },
     selectedPathItemChanged:function(){
-    
-      console.log("selectedPathItem",this.selectedPathItem);
+      //console.log("selectedPathItem",this.selectedPathItem);
       this.explore( this.selectedPathItem );
     },
     explore: function( pathItem ){
-      if(pathItem.type == "folder"){
-        this.currentPath += "/"+ pathItem.name;
+      if( !pathItem ) return;
+      if( pathItem.type == "folder" ){
+        //console.log("exploring", pathItem, this.activePath, this.path);
+        this.path = this.activePath + "/"+ pathItem.name;
+        this.activePath += "/"+ pathItem.name;
+        //this.path += "/"+ pathItem.name;
       }
     },
     fetchFiles:function( path ){
@@ -207,10 +209,16 @@
       this._pathItems = items;
     },
     //attribute change handlers
-    currentPathChanged:function(){
-       if(!this.currentPath) return;
-       this.fetchFiles( this.currentPath ); 
+    /*pathChanged:function(){
+       if(!this.path) return;
+       this.fetchFiles( this.path ); 
+    },*/
+    activePathChanged:function(){
+       if(!this.activePath) return;
+       //console.log("ACTIVE PATH", this.activePath);
+       this.fetchFiles( this.activePath ); 
     },
+    
     _searchActiveChanged:function(){
       if( this._searchActive ){
         this.$.srchField.style.opacity = 1;

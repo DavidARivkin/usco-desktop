@@ -9,7 +9,7 @@
   "window": {
     "title": "usco-desktop",
     "frame": true,
-    "toolbar": false,
+    "toolbar": true,
     "width": 1200,
     "height": 600
   },

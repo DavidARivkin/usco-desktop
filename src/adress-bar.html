@@ -2,7 +2,7 @@
 
 <link rel="import" href="../components/core-selector/core-selector.html">
 
-<polymer-element name="adress-bar" attributes="uri">
+<polymer-element name="adress-bar" attributes="uri activeUri">
   <template>
     <style>
     :host{
@@ -15,40 +15,104 @@
     .uriElems{
       width:300px;
     }
+    .active{
+      color:#ffd200;
+    }
     </style>
     <span>
-        <template repeat="{{uriElem,index in uriComponents}}">
-          <span class="uriElem" value="{{index}}" on-tap="{{foo}}">{{uriElem}}</span> / 
+        <template repeat="{{uriElem,index in _uriComponents}}">
+          <span class="uriElem {{ {active: index == activeIndex} | tokenList}}" 
+          value="{{index}}" on-tap="{{uriComponentTapHandler}}">{{uriElem}}</span> / 
         </template>
-      
     </span>
   </template>
   <script>
     Polymer("adress-bar",{
       uri:"",
-      uriComponents:[],
-      currentUriItem:null,
+      _uriComponents:[],
+      _maxRefUri:"",
+      
+      activeIndex: -1,
+      activeUri:"",
       //attribute change handlers
-      uriChanged:function(){
+      uriChanged:function( oldUri, newUri ){
         //TODO: reuse our exisitng code , or generic node.js path etc 
-        this.uriComponents = this.uri.split("/");
+        console.log("uri", oldUri,newUri, "activeUri", this.activeUri);
+        
+        var foo = this.isNewPathInOldPath( this._maxRefUri, newUri );
+        if(foo)
+        {
+        
+        }else
+        {
+          this._uriComponents = this.uri.split("/");
+          this.activeIndex  = this._uriComponents.length-1;
+          this._maxRefUri = newUri;
+        }
       },
-      currentUriItemChanged:function(){
-        console.log("item", this.currentUriItem);
+      activeIndexChanged:function(){
+        //console.log("activeIndex", this.activeIndex);
+        this.activeUri = this._uriComponents.slice(0, this.activeIndex+1 ).join( "/" );
       },
-      foo:function(event, target){
+      activeUriChanged:function(){
+        var splitUri = this.activeUri.split("/");
+        var index = splitUri.length-1;
+        if( index !== this.activeIndex )
+        {
+          this.activeIndex = index;
+        }
+      },
+      //event handlers
+      uriComponentTapHandler:function(event, target){
         var index = event.target.getAttribute("value");
         if( !index ) return;
         index = parseInt( index );
-        //console.log("index", index, this.uriComponents[index], this.uriComponents.length);
-        console.log(this.uriComponents, index);
-        this.uriComponents.splice(index+1,this.uriComponents.length-1 -index);
-        var newUri = this.uriComponents.join("/");
-        console.log("newUri", newUri,this.uriComponents);
-        this.uri = newUri;
+        this.activeIndex = index;
+        
+        /*
+        //console.log("index", index, this._uriComponents[index], this._uriComponents.length);
+        console.log(this._uriComponents, index);
+        this._uriComponents.splice(index+1,this._uriComponents.length-1 -index);
+        var newUri = this._uriComponents.join("/");
+        console.log("newUri", newUri,this._uriComponents);
+        this.uri = newUri;*/
         //console.log("event.target", event.target.getAttribute("value"));
+      },
+      //helpers
+      isNewPathInOldPath:function(oldUri, newUri){
+        //check if path is contained in old path
+        if(oldUri != "" && newUri !== "")
+        {
+          console.log("gne");
+          var oldUriComps  = oldUri.split("/");
+          var newUriComps = newUri.split("/");
+          
+          if(oldUriComps.length > newUriComps.length )
+          {
+            console.log("old bigger");
+          
+          //console.log("uriComponents",uriComponents, aUriComponents);
+          var maxLen = Math.min( oldUriComps.length, newUriComps.length );
+          var accumul = [];
+          
+          //is new URI contained in old ?
+          var isContained = true;
+          for( var i=0;i<maxLen;i++ ){
+            accumul.push( newUriComps[i] ); 
+            if(oldUriComps[i] !== newUriComps[i])
+            {
+              isContained = false;
+              break;
+            }
+          }
+          accumul = accumul.join("/");
+          console.log("isContained",isContained);
+          return isContained;
+          }
+          return false;
+        }
+        return false;
       }
-     
     });
   </script>
 </polymer-element>
