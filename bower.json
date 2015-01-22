@@ -9,10 +9,12 @@
     "paper-icon-button": "Polymer/paper-icon-button#~0.5.2",
     "paper-input": "Polymer/paper-input#~0.5.2",
     "core-list": "Polymer/core-list#~0.5.2",
-    "core-selector": "Polymer/core-selector#~0.5.2"
+    "core-selector": "Polymer/core-selector#~0.5.2",
+    "mark-down": "BasicElements/mark-down#~0.6.3"
   },
   "resolutions": {
     "webcomponentsjs": "~0.5.2",
-    "polymer": "^0.5.0"
+    "polymer": "^0.5.0",
+    "core-component-page": "^0.5.0"
   }
 }

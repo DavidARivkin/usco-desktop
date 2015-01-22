@@ -9,6 +9,10 @@
 
 <link href='http://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
 
+
+<link rel="import" href="../components/mark-down/mark-down.html">
+
+
 <link rel="import" href="adress-bar.html">
 
 
@@ -46,6 +50,7 @@
     /*search related styling*/
     .searchField{
       opacity: 0;
+      font-size:0.6em;
       
       -webkit-transition: opacity .15s ease-in-out;
       -moz-transition: opacity .15s ease-in-out;
@@ -57,12 +62,10 @@
       color: white;
       font-size:0.8em;
     }
-
     .searchField /deep/ ::-moz-placeholder {
       color: white;
       font-size:0.8em;
     }
-
     .searchField /deep/ :-ms-input-placeholder {
       color: white;
       font-size:0.8em;
@@ -87,14 +90,20 @@
     
     .content{
       height:80%;
+      width:100%;
     }
     
     .filesAndFolders{
       padding:10px;
+      width: 50%;
+      height:100%;
+      display:inline-block;
+      position: absolute;
     }
     .filesAndFoldersList{
       overflow: auto;
       height: 100%;
+      
       padding: 5px;
     }
     .fafFolder{
@@ -103,6 +112,27 @@
     }
      .fafFile{
       color:#18294D;
+    }
+    
+    .preview {
+      width: 50%;
+      height: 100%;
+      display: inline-block;
+      /* top: 0; */
+      position: absolute;
+      right: 0;
+      padding: 10px;
+    }
+    
+    /*for testing only for now*/
+    .faDesign{
+      color:red;
+    }
+    
+    .md-viewer{
+      width:100%;
+      height: 80%;
+      overflow: auto;
     }
     
     </style>
@@ -116,7 +146,7 @@
       </span>
       <span>
         <paper-input-decorator label="search..." class="searchField" id="srchField"> 
-          <input id="searchField" type="text" on-keyup="{{search}}" /> 
+          <input id="searchField" type="text" on-keyup="{{search}}" value="{{searchValue}}"/> 
         </paper-input-decorator>
       </span>
       <paper-icon-button icon="search" on-click="{{ toggleSearch }}"> </paper-icon-button>
@@ -129,8 +159,8 @@
     </core-toolbar>
     
     <div class="content">
-      Files and folders
       <div class="filesAndFolders">
+        Files and folders
         <!--
         <ul class="filesAndFoldersList">
           <template repeat="{{item in _pathItems}}">
@@ -141,29 +171,80 @@
             </li>
           </template>
         </ul>-->
-        <core-list data="{{_pathItems}}" selection="{{selectedPathItem}}" class="filesAndFoldersList">
+        <core-list data="{{_filteredPathItems}}" selection="{{selectedPathItem}}" class="filesAndFoldersList">
           <template>
-            <div class="{{ {fafFolder: model.type == 'folder', fafFile: model.type == 'file'} | tokenList}}">
+            <div class="{{ {fafFolder: model.type == 'folder', fafFile: model.type == 'file', faDesign: model.flag == 'isDesign'} | tokenList}}">
               {{model.name}}
             </div>
           </template>
         </core-list>
+      </div>
+      <div class="preview">
+          <mark-down class="md-viewer" text="{{activeFileContent}}">
+          </mark-down>
       </div>
     </div>
   </template>
   <script>
   Polymer("usco-desktop",{
     _searchActive : false,
+    searchValue:"",
     
     path:null,
     activePath : null,
     
     _pathItems : [],
+    _filteredPathItems: [],
     selectedPathItem: null,
     
+    //collections related items
+    localCollections:{ },
+    localFavorites : {},
+    
+    //file related stuff
+    activeFileContent:"",
+    
+    //indexation relates stuff, only for active path
+    index:null,
+    created:function(){
+      /*var lunr = require("lunr");
+      var index = lunr(function () {
+          this.field('title', {boost: 10})
+          this.field('body')
+          this.ref('id')
+      })
+      var documents = [{
+          id: 1,
+          title: 'Twelfth Night',
+          body: 'If music be the food of love, play on'
+      }, {
+          id: 2,
+          title: 'Macbeth',
+          body: 'When shall we three meet again, In thunder, lightning, or in rain?'
+      }, {
+          id: 3,
+          title: 'Richard III',
+          body: 'Now is the winter of our discontent, Made glorious summer by this sun of York;'
+      }]
+
+      documents.forEach(function (document) {
+          index.add(document)
+      })
+      
+      
+      var results = index.search('lov');
+      console.log("searching for luv",results);
+      results.forEach(function (result) {
+           console.log("result",result);
+           var doc = documents[ parseInt(result.ref[0]) -1 ];
+           console.log("doc", doc);
+      })*/
+    
+    },
     domReady:function(){
       console.log("app ready"); 
-      this.path = "/home/mmoissette/reprap/designs"
+      this.path = "/home/mmoissette/reprap/designs";
+
     },
     //internal api
     toggleSearch:function(){
@@ -172,6 +253,10 @@
     selectedPathItemChanged:function(){
       //console.log("selectedPathItem",this.selectedPathItem);
       this.explore( this.selectedPathItem );
+      
+      if( this.isMarkDown( this.selectedPathItem ) ){
+        this.activeFileContent = this.openFile( this.selectedPathItem.path );
+      }
     },
     explore: function( pathItem ){
       if( !pathItem ) return;
@@ -189,10 +274,11 @@
       var items = [];
       for(var i=0;i<listing.length;i++){
         //console.log(listing[i]);
-        var stats = fs.statSync( path + "/" + listing[i] );
+        var itemPath = path + "/" + listing[i];
+        var stats = fs.statSync( itemPath );
         //console.log(stats);
         
-        var item = {name:listing[i]};
+        var item = {name:listing[i], path:itemPath, _idx:i};
         
         if(stats.isFile() )
         {
@@ -202,13 +288,52 @@
         {
           item.type = "folder";
         }
+        //FIXME : not sure:
+        if( this.isDesign( itemPath ) ){
+          item.flag = "isDesign";
+          console.log("is a design",itemPath);
+        }
+        
         
         items.push( item );
       }
       
       this._pathItems = items;
+      
+      //
+      this._filteredPathItems = this._pathItems;
+    },
+    
+    search:function(){
+      console.log("searching", this.searchValue);
+      if( this.searchValue === "" ) {
+        this._filteredPathItems = this._pathItems;
+        return;
+      }
+      
+      var searchResults = this.index.search(this.searchValue);
+      console.log("searchResults", searchResults);
+      
+      var that = this;
+      var finalResults = [];
+      
+      //FIXME: perhaps to this differently and filter "polymer like"?
+      searchResults.forEach(function (result) {
+        var index = result.ref;
+        //console.log("idx", index);
+        if( index ){
+          var resolvedResult = that._pathItems[ result.ref ];
+          //console.log("resolvedResult",resolvedResult);
+          finalResults.push( resolvedResult );
+        }
+      });
+      
+      this._filteredPathItems = finalResults;
+      console.log("filtered results",finalResults);
+      //this._pathItems
     },
     //attribute change handlers
+    
     /*pathChanged:function(){
        if(!this.path) return;
        this.fetchFiles( this.path ); 
@@ -217,6 +342,11 @@
        if(!this.activePath) return;
        //console.log("ACTIVE PATH", this.activePath);
        this.fetchFiles( this.activePath ); 
+       
+       //TODO
+       this.createPathItemsIndex();
+       //this.indexPathSubItems( this.activePath );
+       this.indexPathSubItems( this._pathItems );
     },
     
     _searchActiveChanged:function(){
@@ -226,6 +356,94 @@
       }else{
         this.$.srchField.style.opacity = 0;
       }
+    },
+    //TODO: extract this to seperate module/repo
+    isDesign:function( uri ){
+      var fs = require("fs");
+      
+      var stats = fs.statSync( uri );
+      if( !stats.isDirectory() ){
+        return false;
+      }
+      
+      var listing = fs.readdirSync( uri );
+      var items = [];
+      for(var i=0;i<listing.length;i++){
+        var itemName = listing[i];
+        
+        if( itemName == "design.json" ){
+          return true;
+        }
+        //var itemFullUri = uri + "/" + itemUri;
+        //var stats = fs.statSync( itemFullUri );
+      }
+      return false;
+    },
+    //TODO: not too sure about this, should type checking be done in a wrapped markdown editor
+    isMarkDown:function( pathElem ){
+      if( !pathElem ) return false;
+      if( pathElem.type == "folder") return false;
+      //TODO : do extension fetching correctly
+      if( pathElem.name.split(".").pop().toLowerCase() == "md"){
+        console.log(" got a markdown file", pathElem );
+        return true;
+      }     
+      return false;
+    },
+    //TODO: extract this to seperate module/repo (usco-xxxstore)
+    openFile:function( uri ){
+      console.log("opening file", uri );
+      var fs = require("fs");
+      var content =  fs.readFileSync( uri, {encoding:'utf8'} );
+      console.log("content", content);
+      return content;
+    },
+    
+    //TODO: extract these as well
+    createPathItemsIndex:function(){
+      var lunr = require("lunr");
+      this.index = lunr(function () {
+        this.field('name', {boost: 10})
+        //this.ref('name');
+        this.ref('_idx');
+        /*this.field('body')
+        this.ref('id')*/
+      });
+    
+    },
+    
+    indexPathSubItems:function( items ){
+      //var fs = require("fs");
+      //var listing = fs.readdirSync( uri );
+      
+      /*for(var i=0;i<listing.length;i++){
+        //console.log(listing[i]);
+        var itemPath = path + "/" + listing[i];
+        var stats = fs.statSync( itemPath );
+      }*/
+      /*lunr.js demo/examples
+      var documents = [{
+          id: 1,
+          title: 'Twelfth Night',
+          body: 'If music be the food of love, play on'
+      }, {
+          id: 2,
+          title: 'Macbeth',
+          body: 'When shall we three meet again, In thunder, lightning, or in rain?'
+      }, {
+          id: 3,
+          title: 'Richard III',
+          body: 'Now is the winter of our discontent, Made glorious summer by this sun of York;'
+      }]
+      */
+      var that = this;
+      
+      items.forEach(function ( item ) {
+          //var tmpDoc = {'name':document};
+          //console.log("indexing", item, "as", item);
+          that.index.add( item );
+      })
+      
     }
     
   });
