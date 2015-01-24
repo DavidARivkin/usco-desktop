@@ -83,13 +83,12 @@
         //check if path is contained in old path
         if(oldUri != "" && newUri !== "")
         {
-          console.log("gne");
           var oldUriComps  = oldUri.split("/");
           var newUriComps = newUri.split("/");
           
           if(oldUriComps.length > newUriComps.length )
           {
-            console.log("old bigger");
+            //console.log("old bigger");
           
           //console.log("uriComponents",uriComponents, aUriComponents);
           var maxLen = Math.min( oldUriComps.length, newUriComps.length );

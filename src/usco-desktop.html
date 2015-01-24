@@ -47,6 +47,12 @@
       -webkit-app-region: drag;*/
     }
     
+    /*files and folders , some more */
+    adress-bar{
+    
+      background: #0CA9E3;
+    }
+    
     /*search related styling*/
     .searchField{
       opacity: 0;
@@ -136,15 +142,14 @@
     }
     
     </style>
-   
     <core-toolbar class="core-narrow">
       <paper-icon-button icon="menu"></paper-icon-button>
       <span flex>USCO-DESKTOP</span>
       
-      <span>
-        <adress-bar uri="{{path}}" activeUri="{{activePath}}"> </adress-bar>
-      </span>
-      <span>
+      <span flex layout horizontal>
+        <paper-icon-button icon="home"> </paper-icon-button>
+        <paper-icon-button icon="list"> </paper-icon-button>
+        <paper-icon-button icon="apps"> </paper-icon-button>
         <paper-input-decorator label="search..." class="searchField" id="srchField"> 
           <input id="searchField" type="text" on-keyup="{{search}}" value="{{searchValue}}"/> 
         </paper-input-decorator>
@@ -160,7 +165,6 @@
     
     <div class="content">
       <div class="filesAndFolders">
-        Files and folders
         <!--
         <ul class="filesAndFoldersList">
           <template repeat="{{item in _pathItems}}">
@@ -171,6 +175,9 @@
             </li>
           </template>
         </ul>-->
+        <p><a href='http://www.google.fr/'>link5: gets opened in new window</a></p>
+        
+        <div> <adress-bar uri="{{path}}" activeUri="{{activePath}}"> </adress-bar> </div>
         <core-list data="{{_filteredPathItems}}" selection="{{selectedPathItem}}" class="filesAndFoldersList">
           <template>
             <div class="{{ {fafFolder: model.type == 'folder', fafFile: model.type == 'file', faDesign: model.flag == 'isDesign'} | tokenList}}">
@@ -180,8 +187,8 @@
         </core-list>
       </div>
       <div class="preview">
-          <mark-down class="md-viewer" text="{{activeFileContent}}">
-          </mark-down>
+        <mark-down class="md-viewer" text="{{activeFileContent}}">
+        </mark-down>
       </div>
     </div>
   </template>
@@ -241,21 +248,76 @@
       })*/
     
     },
+    ready:function(){
+      //node-webkit specific, to handle opening of urls: ie links should either
+      //be opened in a seperate browser window, or in some special manner, and NOT
+      //override the current nw app content
+      
+      /*alternate solution, for opening in another nw window with mid click
+      var gui = require('nw.gui');
+      var win = gui.Window.get();
+      console.log("testing , yeah");
+      win.on('new-win-policy', function(frame, url, policy) {
+        console.log("sure whatever");
+        console.log("new window requested", frame, url, policy);
+      });
+      
+      
+      */
+      /*based on node-webkit-external-linker */
+      var gui = require('nw.gui');
+      function externalLinker(e, detail) {
+        var link = e.target,
+            rel, // declared now, defined later
+            target = link.target,
+            href = link.href;
+        debugger;
+        // abort link hijack if crucial variables are not defined or if user sets link to target='_self'
+        if (!link || !link.getAttribute || !href || target === '_self') {
+          return;
+        }
+
+        // defined now that we know that link.getAttribute is not undefined
+        rel = link.getAttribute('rel');
+
+        // hijack the link and open in a new window under these conditions
+        if (rel === 'external' || target === '_blank' || target === '_top' || href.substr(0, 4) === 'http') {
+          e.preventDefault();
+          gui.Shell.openExternal(href);
+        }
+      }
+      //window.removeEventListener('click', externalLinker, false);
+      //window.addEventListener('click', externalLinker, false);
+      //needed due to ShadowDOM event retargeting ("wrong" target in the section above)
+      this.shadowRoot.removeEventListener('click', externalLinker, false);
+      this.shadowRoot.addEventListener('click', externalLinker, false);
+  
+    },
     domReady:function(){
       console.log("app ready"); 
       this.path = "/home/mmoissette/reprap/designs";
-
     },
     //internal api
     toggleSearch:function(){
       this._searchActive = !this._searchActive;
     },
     selectedPathItemChanged:function(){
-      //console.log("selectedPathItem",this.selectedPathItem);
+      console.log("selectedPathItem",this.selectedPathItem);
       this.explore( this.selectedPathItem );
       
+      //TODO: deal with all this in a cleaner fashion
       if( this.isMarkDown( this.selectedPathItem ) ){
         this.activeFileContent = this.openFile( this.selectedPathItem.path );
+      }else{
+        this.activeFileContent = "";
+      }
+      
+      if(this.hasReadme( this._pathItems ) ){
+        //console.log("oh yeah, readme here", this.activePath);
+        this.activeFileContent = this.openFile( this.activePath+"/README.md" );
+      }else{
+        console.log("no readme found");
+        this.activeFileContent = "";
       }
     },
     explore: function( pathItem ){
@@ -264,7 +326,6 @@
         //console.log("exploring", pathItem, this.activePath, this.path);
         this.path = this.activePath + "/"+ pathItem.name;
         this.activePath += "/"+ pathItem.name;
-        //this.path += "/"+ pathItem.name;
       }
     },
     fetchFiles:function( path ){
@@ -330,7 +391,6 @@
       
       this._filteredPathItems = finalResults;
       console.log("filtered results",finalResults);
-      //this._pathItems
     },
     //attribute change handlers
     
@@ -344,9 +404,10 @@
        this.fetchFiles( this.activePath ); 
        
        //TODO
-       this.createPathItemsIndex();
-       //this.indexPathSubItems( this.activePath );
-       this.indexPathSubItems( this._pathItems );
+       this.async(function(){
+         this.createPathItemsIndex();
+         this.indexPathSubItems( this._pathItems );
+       });
     },
     
     _searchActiveChanged:function(){
@@ -390,12 +451,31 @@
       }     
       return false;
     },
+    //TODO: extract this one too
+    hasReadme:function( pathItems ){
+      console.log("checking for readme in", pathItems);
+      
+      for(var i=0;i<pathItems.length;i++)
+      {
+        var item = pathItems[i];
+         var lItem = item.name.toLowerCase();
+        if(lItem === "readme.md")
+        {
+          console.log("found");
+          return true;
+        }
+      }
+      /*
+      pathItems.forEach(function ( item ) {
+       
+      })*/
+      return false;
+    },
     //TODO: extract this to seperate module/repo (usco-xxxstore)
     openFile:function( uri ){
       console.log("opening file", uri );
       var fs = require("fs");
       var content =  fs.readFileSync( uri, {encoding:'utf8'} );
-      console.log("content", content);
       return content;
     },
     
