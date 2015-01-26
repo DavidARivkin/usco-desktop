@@ -150,6 +150,9 @@
         <paper-icon-button icon="home"> </paper-icon-button>
         <paper-icon-button icon="list"> </paper-icon-button>
         <paper-icon-button icon="apps"> </paper-icon-button>
+        
+        <paper-icon-button icon="backup"> </paper-icon-button>
+        
         <paper-input-decorator label="search..." class="searchField" id="srchField"> 
           <input id="searchField" type="text" on-keyup="{{search}}" value="{{searchValue}}"/> 
         </paper-input-decorator>
@@ -214,39 +217,7 @@
     //indexation relates stuff, only for active path
     index:null,
     created:function(){
-      /*var lunr = require("lunr");
-      var index = lunr(function () {
-          this.field('title', {boost: 10})
-          this.field('body')
-          this.ref('id')
-      })
-      var documents = [{
-          id: 1,
-          title: 'Twelfth Night',
-          body: 'If music be the food of love, play on'
-      }, {
-          id: 2,
-          title: 'Macbeth',
-          body: 'When shall we three meet again, In thunder, lightning, or in rain?'
-      }, {
-          id: 3,
-          title: 'Richard III',
-          body: 'Now is the winter of our discontent, Made glorious summer by this sun of York;'
-      }]
-
-      documents.forEach(function (document) {
-          index.add(document)
-      })
-      
-      
-      var results = index.search('lov');
-      console.log("searching for luv",results);
-      results.forEach(function (result) {
-           console.log("result",result);
-           var doc = documents[ parseInt(result.ref[0]) -1 ];
-           console.log("doc", doc);
-      })*/
-    
+      this.checkForUpdates();
     },
     ready:function(){
       //node-webkit specific, to handle opening of urls: ie links should either
@@ -261,7 +232,6 @@
         console.log("sure whatever");
         console.log("new window requested", frame, url, policy);
       });
-      
       
       */
       /*based on node-webkit-external-linker */
@@ -493,37 +463,68 @@
     },
     
     indexPathSubItems:function( items ){
-      //var fs = require("fs");
-      //var listing = fs.readdirSync( uri );
-      
-      /*for(var i=0;i<listing.length;i++){
-        //console.log(listing[i]);
-        var itemPath = path + "/" + listing[i];
-        var stats = fs.statSync( itemPath );
-      }*/
-      /*lunr.js demo/examples
-      var documents = [{
-          id: 1,
-          title: 'Twelfth Night',
-          body: 'If music be the food of love, play on'
-      }, {
-          id: 2,
-          title: 'Macbeth',
-          body: 'When shall we three meet again, In thunder, lightning, or in rain?'
-      }, {
-          id: 3,
-          title: 'Richard III',
-          body: 'Now is the winter of our discontent, Made glorious summer by this sun of York;'
-      }]
-      */
       var that = this;
-      
       items.forEach(function ( item ) {
           //var tmpDoc = {'name':document};
           //console.log("indexing", item, "as", item);
           that.index.add( item );
       })
-      
+    },
+    checkForUpdates:function( ){
+      console.log("INFO:checking for updates");
+    
+      var gui = require('nw.gui');
+      var pkg = require('./package.json'); // Insert your app's manifest here
+      var updater = require('node-webkit-updater');
+      var upd = new updater(pkg);
+      var copyPath, execPath;
+
+      // Args passed when new app is launched from temp dir during update
+      if(gui.App.argv.length) {
+          console.log("step5");
+          // ------------- Step 5 -------------
+          copyPath = gui.App.argv[0];
+          execPath = gui.App.argv[1];
+
+          // Replace old app, Run updated app from original location and close temp instance
+          upd.install(copyPath, function(err) {
+              if(!err) {
+
+                  // ------------- Step 6 -------------
+                  upd.run(execPath, null);
+                  gui.App.quit();
+              }
+          });
+      }
+      else { // if no arguments were passed to the app
+          console.log("no args");
+          // ------------- Step 1 -------------
+          upd.checkNewVersion(function(error, newVersionExists, manifest) {
+              //console.log(error, newVersionExists, manifest);
+          
+              if (!error && newVersionExists) {
+                console.log("got a new version");
+                  // ------------- Step 2 -------------
+                  upd.download(function(error, filename) {
+                    console.log("downloading", error, filename);
+                      if (!error) {
+                        console.log("no errors, continuing");
+                          // ------------- Step 3 -------------
+                          upd.unpack(filename, function(error, newAppPath) {
+                              if (!error) {
+                                  console.log("new version unpacked", error, newAppPath);
+                                  // ------------- Step 4 -------------
+                                  upd.runInstaller(newAppPath, [upd.getAppPath(), upd.getAppExec()],{});
+                                  
+                                  gui.App.quit();
+                              }
+                          }, manifest);
+                      }
+                  }, manifest);
+              }
+          });
+      }
+    
     }
     
   });

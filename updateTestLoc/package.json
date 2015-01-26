@@ -4,7 +4,7 @@
   "description": "usco-desktop",
   "author": "Mark kaosat-dev Moissette",
   "license": "AGPLV3",
-  "version": "0.0.1",
+  "version": "0.2.1",
   "node-remote": "localhost",
   "window": {
     "title": "usco-desktop",
@@ -17,10 +17,10 @@
     "plugin": "true"
   },
   "manifestUrl": "http://localhost:3000/package.json",
-    "packages": {
-        "linux64": {
-           "url": "http://localhost:3000/releases/updapp/linux32/updapp.tar.gz"
-        }
+  "packages": {
+      "linux64": {
+         "url": "http://localhost:3000/linux64/usco-desktop-0.2.1.zip"
+      }
   },
   "dependencies": {
     "gulp": "^3.8.10",
