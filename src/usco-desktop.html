@@ -2,18 +2,27 @@
 <link rel="import" href="../components/core-icons/core-icons.html">
 <link rel="import" href="../components/core-toolbar/core-toolbar.html">
 <link rel="import" href="../components/core-media-query/core-media-query.html">
-<link rel="import" href="../components/paper-icon-button/paper-icon-button.html">
 
 <link rel="import" href="../components/paper-input/paper-input-decorator.html">
+<link rel="import" href="../components/paper-button/paper-button.html">
+<link rel="import" href="../components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../components/paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../components/paper-dropdown/paper-dropdown.html">
+<link rel="import" href="../components/paper-item/paper-item.html">
+<link rel="import" href="../components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../components/paper-dialog/paper-action-dialog.html">
+
+<link rel="import" href="../components/core-menu/core-menu.html" >
 <link rel="import" href="../components/core-list/core-list.html">
-
-<link href='http://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
-
-
 <link rel="import" href="../components/mark-down/mark-down.html">
 
 
+<link href='http://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
+
 <link rel="import" href="adress-bar.html">
+
+
+
 
 
 <polymer-element name="usco-desktop">
@@ -141,6 +150,15 @@
       overflow: auto;
     }
     
+    /* for main menu */
+    .toolMenu{color:black;}
+    .toolMenu /deep/ paper-item { font-size:0.6em;}
+    
+    /*various*/
+    .miniInfo{
+      font-size: 0.5em !important;
+    }
+    
     </style>
     <core-toolbar class="core-narrow">
       <paper-icon-button icon="menu"></paper-icon-button>
@@ -163,7 +181,22 @@
           <div style="cursor:pointer" on-tap="{{blah}}">{{result}}</div>
         </template>
       </span>
-      <paper-icon-button icon="more-vert"></paper-icon-button>
+      <!--<paper-icon-button icon="more-vert"></paper-icon-button>-->
+      
+      <paper-menu-button>
+        <paper-icon-button icon="more-vert"></paper-icon-button>
+        <paper-dropdown class="dropdown" transition="" halign="right" noink>
+          <core-menu class="toolMenu">
+            <paper-item noink on-tap="{{reqCheckForUpdates}}"> <core-icon icon="refresh">  </core-icon> Check for updates </paper-item>
+            <paper-item noink> <core-icon icon="settings"> </core-icon> Settings</paper-item>
+            <paper-item noink> <core-icon icon="help">     </core-icon> Help </paper-item>
+            
+            <paper-item noink disabled class="miniInfo"> [[pkg.name]] [[pkg.version]] </paper-item>
+          </core-menu>
+        </paper-dropdown>
+      </paper-menu-button>
+      
+      
     </core-toolbar>
     
     <div class="content">
@@ -194,6 +227,16 @@
         </mark-down>
       </div>
     </div>
+    
+    <!--dialogs, not so sure about this-->
+    <paper-action-dialog heading="New update, huzzah !" id="updateDialog" backdrop class="dialog"> 
+      Bla
+      <p>A new update is available, do you want to download it ?</p>
+
+      <paper-button affirmative on-tap="{{reqRefuseUpdate}}">Decline</paper-button>
+      <paper-button affirmative autofocus on-tap="{{reqConfirmUpdate}}" >Accept</paper-button>
+    </paper-action-dialog>
+    
   </template>
   <script>
   Polymer("usco-desktop",{
@@ -214,10 +257,17 @@
     //file related stuff
     activeFileContent:"",
     
-    //indexation relates stuff, only for active path
+    //indexation related stuff, only for active path
     index:null,
+    
+    //metadata related stuff
+    version:null,
+    pkg:null,
+    
     created:function(){
-      this.checkForUpdates();
+    
+      this.pkg = require('./package.json'); // Insert your app's manifest here
+      //this.version = pkg.version;
     },
     ready:function(){
       //node-webkit specific, to handle opening of urls: ie links should either
@@ -470,8 +520,41 @@
           that.index.add( item );
       })
     },
+    reqCheckForUpdates:function(){
+    
+       var that = this;
+       this.checkForUpdates().then( function( newVersionExists ){
+          console.log("do we have updates? ", newVersionExists );
+          if(newVersionExists){
+            that.$.updateDialog.toggle();
+          }
+       });
+    },
+    reqRefuseUpdate:function(){
+      console.log("user refused update");
+    },
+    reqConfirmUpdate:function(){
+      console.log("user accepted update");
+      this.downloadAndInstallUpdate();
+    },
     checkForUpdates:function( ){
       console.log("INFO:checking for updates");
+      var gui = require('nw.gui');
+      var pkg = require('./package.json'); // Insert your app's manifest here
+      var updater = require('node-webkit-updater');
+      var Q   = require("q");
+      var upd = new updater(pkg);
+
+      var deferred = Q.defer();
+      
+      upd.checkNewVersion(function(error, newVersionExists, manifest) {
+        console.log(error, newVersionExists, manifest);
+        deferred.resolve( newVersionExists );
+      });
+      return deferred.promise;
+    },
+    downloadAndInstallUpdate:function(){
+      console.log("INFO:downloading update");
     
       var gui = require('nw.gui');
       var pkg = require('./package.json'); // Insert your app's manifest here
@@ -485,6 +568,8 @@
           // ------------- Step 5 -------------
           copyPath = gui.App.argv[0];
           execPath = gui.App.argv[1];
+          
+          console.log("copyPath",copyPath,execPath);
 
           // Replace old app, Run updated app from original location and close temp instance
           upd.install(copyPath, function(err) {
@@ -512,8 +597,9 @@
                           // ------------- Step 3 -------------
                           upd.unpack(filename, function(error, newAppPath) {
                               if (!error) {
-                                  console.log("new version unpacked", error, newAppPath);
+                                  console.log("new version unpacked", error, newAppPath,upd.getAppPath(), upd.getAppExec());
                                   // ------------- Step 4 -------------
+                                  //FIXME : uh oh, we do not have an installer...
                                   upd.runInstaller(newAppPath, [upd.getAppPath(), upd.getAppExec()],{});
                                   
                                   gui.App.quit();

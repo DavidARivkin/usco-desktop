@@ -11,7 +11,10 @@
     "core-list": "Polymer/core-list#~0.5.2",
     "core-selector": "Polymer/core-selector#~0.5.2",
     "mark-down": "BasicElements/mark-down#~0.6.3",
-    "node-webkit-external-linker.js": "~1.0.2"
+    "node-webkit-external-linker.js": "~1.0.2",
+    "paper-menu-button": "polymer/paper-menu-button#~0.5.4",
+    "paper-dropdown": "polymer/paper-dropdown#~0.5.4",
+    "paper-dialog": "Polymer/paper-dialog#~0.5.4"
   },
   "resolutions": {
     "webcomponentsjs": "~0.5.2",

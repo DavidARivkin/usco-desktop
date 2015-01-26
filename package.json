@@ -17,15 +17,16 @@
     "plugin": "true"
   },
   "manifestUrl": "http://localhost:3000/package.json",
-    "packages": {
-        "linux64": {
-           "url": "http://localhost:3000/releases/updapp/linux32/updapp.tar.gz"
-        }
+  "packages": {
+    "linux64": {
+      "url": "http://localhost:3000/releases/updapp/linux32/updapp.tar.gz"
+    }
   },
   "dependencies": {
     "gulp": "^3.8.10",
     "gulp-util": "^3.0.2",
-    "lunr": "^0.5.7"
+    "lunr": "^0.5.7",
+    "q": "^1.1.2"
   },
   "devDependencies": {
     "gulp-atom-shell": "^0.1.2",
